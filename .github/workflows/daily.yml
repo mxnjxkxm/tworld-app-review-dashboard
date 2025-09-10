@@ -1,0 +1,53 @@
+name: Daily Review Collection
+
+on:
+  schedule:
+    - cron: "0 17 * * *"  # 매일 KST 02:00 (UTC 17:00)
+  workflow_dispatch:  # 수동 실행 허용
+
+jobs:
+  collect-reviews:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+      
+      - name: Setup database
+        run: pnpm db:push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run daily collection
+        run: pnpm daily
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          APPSTORE_APP_ID: ${{ secrets.APPSTORE_APP_ID }}
+          GOOGLE_PLAY_APP_ID: ${{ secrets.GOOGLE_PLAY_APP_ID }}
+      
+      - name: Upload database (if using SQLite)
+        uses: actions/upload-artifact@v3
+        if: contains(env.DATABASE_URL, 'file:')
+        with:
+          name: database
+          path: "*.db"
+          retention-days: 30
+

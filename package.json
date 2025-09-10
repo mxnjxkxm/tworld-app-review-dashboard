@@ -1,0 +1,49 @@
+{
+  "name": "tworld-review-analyzer",
+  "version": "1.0.0",
+  "description": "T world 앱 리뷰 자동 수집 및 분석 시스템",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "seed": "tsx src/seed.ts",
+    "fetch": "tsx src/jobs/fetch-reviews.ts",
+    "summarize": "tsx src/jobs/summarize-topics.ts",
+    "daily": "pnpm fetch && pnpm summarize"
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@prisma/client": "^5.7.0",
+    "@google/generative-ai": "^0.17.0",
+    "app-store-scraper": "^0.18.0",
+    "google-play-scraper": "^9.1.1",
+    "zod": "^3.22.4",
+    "date-fns": "^2.30.0",
+    "cron-parser": "^4.9.0",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "prisma": "^5.7.0",
+    "typescript": "^5.3.0",
+    "tsx": "^4.6.0",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "eslint": "^8.55.0",
+    "eslint-config-next": "^15.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

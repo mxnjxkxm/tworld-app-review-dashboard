@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Store {
+  IOS
+  ANDROID
+}
+
+model App {
+  id        String   @id @default(cuid())
+  store     Store
+  appId     String   // "428872117" for iOS, "com.sktelecom.minit" for Android
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  reviews   Review[]
+  summaries Summary[]
+
+  @@unique([store, appId])
+  @@map("apps")
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  appId     String
+  store     Store
+  reviewId  String   // Store의 원본 식별자
+  author    String
+  rating    Int
+  title     String?
+  text      String
+  language  String?  @default("ko")
+  version   String?
+  country   String?  @default("KR")
+  createdAt DateTime // 원본 리뷰 작성일
+  fetchedAt DateTime @default(now()) // 수집 시각
+
+  // Relations
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([store, reviewId])
+  @@index([store, createdAt])
+  @@index([fetchedAt])
+  @@map("reviews")
+}
+
+model Summary {
+  id            String   @id @default(cuid())
+  store         String  // "IOS" or "ANDROID"
+  appId         String
+  dateKey       String   // YYYY-MM-DD format
+  topicsJson    String   // JSON string of clustered topics
+  geminiSummary String   // AI-generated summary
+  createdAt     DateTime @default(now())
+
+  // Relations
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([store, appId, dateKey])
+  @@index([dateKey])
+  @@map("summaries")
+}
