@@ -1,5 +1,5 @@
 {
-  "name": "tworld-review-analyzer",
+  "name": "tworld-app-review-dashboard",
   "version": "1.0.0",
   "description": "T world 앱 리뷰 자동 수집 및 분석 시스템",
   "private": true,
