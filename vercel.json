@@ -2,11 +2,5 @@
   "buildCommand": "pnpm prisma generate && pnpm build",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-  "regions": ["icn1"],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "GEMINI_API_KEY": "@gemini_api_key",
-    "APPSTORE_APP_ID": "@appstore_app_id",
-    "GOOGLE_PLAY_APP_ID": "@google_play_app_id"
-  }
+  "regions": ["icn1"]
 }
