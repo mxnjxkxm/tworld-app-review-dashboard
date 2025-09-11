@@ -1,7 +1,6 @@
 #!/usr/bin/env tsx
 
 import { prisma } from './lib/prisma';
-import { Store } from '@prisma/client';
 
 async function main() {
   console.log('🌱 시드 데이터 생성 시작');
@@ -16,14 +15,14 @@ async function main() {
     const apps = await Promise.all([
       prisma.app.create({
         data: {
-          store: Store.IOS,
+          store: 'IOS',
           appId: process.env.APPSTORE_APP_ID || '428872117',
           name: 'T world - iOS',
         },
       }),
       prisma.app.create({
         data: {
-          store: Store.ANDROID,
+          store: 'ANDROID',
           appId: process.env.GOOGLE_PLAY_APP_ID || 'com.sktelecom.minit',
           name: 'T world - Android',
         },
@@ -39,7 +38,7 @@ async function main() {
     const sampleReviews = [
       {
         appId: apps[0].id,
-        store: Store.IOS,
+        store: 'IOS',
         reviewId: 'ios-sample-1',
         author: '김철수',
         rating: 5,
@@ -52,7 +51,7 @@ async function main() {
       },
       {
         appId: apps[0].id,
-        store: Store.IOS,
+        store: 'IOS',
         reviewId: 'ios-sample-2',
         author: '박영희',
         rating: 2,
@@ -65,7 +64,7 @@ async function main() {
       },
       {
         appId: apps[1].id,
-        store: Store.ANDROID,
+        store: 'ANDROID',
         reviewId: 'android-sample-1',
         author: '이민수',
         rating: 4,
@@ -78,7 +77,7 @@ async function main() {
       },
       {
         appId: apps[1].id,
-        store: Store.ANDROID,
+        store: 'ANDROID',
         reviewId: 'android-sample-2',
         author: '최지영',
         rating: 1,

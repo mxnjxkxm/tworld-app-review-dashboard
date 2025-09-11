@@ -3,7 +3,7 @@
 import { prisma } from '../lib/prisma';
 import { safelyFetchReviews } from '../lib/scrapers';
 import { detectLanguage } from '../lib/text';
-import { Store } from '@prisma/client';
+// Store enum removed - using string literals
 
 async function main() {
   console.log('🚀 리뷰 수집 작업 시작');
@@ -36,7 +36,7 @@ async function main() {
         const rawReviews = await safelyFetchReviews(
           app.store.toLowerCase() as 'ios' | 'android',
           app.appId,
-          app.store === Store.IOS ? { pageCount: 5 } : { numReviews: 500 }
+          app.store === 'IOS' ? { pageCount: 5 } : { numReviews: 500 }
         );
 
         console.log(`수집된 리뷰: ${rawReviews.length}건`);

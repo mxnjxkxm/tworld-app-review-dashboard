@@ -10,14 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Store {
-  IOS
-  ANDROID
-}
-
 model App {
   id        String   @id @default(cuid())
-  store     Store
+  store     String   // "IOS" or "ANDROID"
   appId     String   // "428872117" for iOS, "com.sktelecom.minit" for Android
   name      String
   createdAt DateTime @default(now())
@@ -34,7 +29,7 @@ model App {
 model Review {
   id        String   @id @default(cuid())
   appId     String
-  store     Store
+  store     String   // "IOS" or "ANDROID"
   reviewId  String   // Store의 원본 식별자
   author    String
   rating    Int

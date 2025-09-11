@@ -3,7 +3,7 @@
 import { prisma } from '../lib/prisma';
 import { clusterReviews, KeywordCluster } from '../lib/text';
 import { summarizeTopic, generateDailySummary } from '../lib/gemini';
-import { Store } from '@prisma/client';
+// Store enum removed - using string literals
 import { format, subDays } from 'date-fns';
 
 interface TopicWithSummary extends KeywordCluster {
