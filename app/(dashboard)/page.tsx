@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import KPICard from '@/components/KPICard';
 import TopicTable from '@/components/TopicTable';
 import ReviewTable from '@/components/ReviewTable';
+import ErrorPage from '@/components/ErrorPage';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -11,17 +12,21 @@ interface SearchParams {
   rating?: string;
 }
 
+// 동적 렌더링 강제
+export const dynamic = 'force-dynamic';
+
 export default async function Dashboard({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  // searchParams를 await로 해결
-  const resolvedSearchParams = await searchParams;
-  const today = new Date();
-  const oneMonthAgo = subDays(today, 30);
-  const threeMonthsAgo = subDays(today, 90);
-  const todayKey = format(today, 'yyyy-MM-dd');
+  try {
+    // searchParams를 await로 해결
+    const resolvedSearchParams = await searchParams;
+    const today = new Date();
+    const oneMonthAgo = subDays(today, 30);
+    const threeMonthsAgo = subDays(today, 90);
+    const todayKey = format(today, 'yyyy-MM-dd');
 
   // KPI 데이터 조회 (3개월 기준)
   const recentMonthReviewsCount = await prisma.review.count({
@@ -216,4 +221,9 @@ export default async function Dashboard({
       </div>
     </div>
   );
+  
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    return <ErrorPage />;
+  }
 }
