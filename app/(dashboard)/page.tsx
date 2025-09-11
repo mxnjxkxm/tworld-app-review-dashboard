@@ -19,43 +19,32 @@ export default async function Dashboard({
   // searchParams를 await로 해결
   const resolvedSearchParams = await searchParams;
   const today = new Date();
-  const yesterday = subDays(today, 1);
-  const sevenDaysAgo = subDays(today, 7);
+  const oneMonthAgo = subDays(today, 30);
+  const threeMonthsAgo = subDays(today, 90);
   const todayKey = format(today, 'yyyy-MM-dd');
 
-  // KPI 데이터 조회
-  const todayReviewsCount = await prisma.review.count({
+  // KPI 데이터 조회 (3개월 기준)
+  const recentMonthReviewsCount = await prisma.review.count({
     where: {
-      fetchedAt: {
-        gte: startOfDay(today),
-        lte: endOfDay(today),
+      createdAt: {
+        gte: oneMonthAgo,
       },
     },
   });
 
-  const yesterdayReviewsCount = await prisma.review.count({
+  const threeMonthReviewsCount = await prisma.review.count({
     where: {
-      fetchedAt: {
-        gte: startOfDay(yesterday),
-        lte: endOfDay(yesterday),
+      createdAt: {
+        gte: threeMonthsAgo,
       },
     },
   });
 
-  const sevenDayReviewsCount = await prisma.review.count({
-    where: {
-      fetchedAt: {
-        gte: startOfDay(sevenDaysAgo),
-      },
-    },
-  });
-
-  // 평균 평점 계산
+  // 3개월 평균 평점 계산
   const avgRatingResult = await prisma.review.aggregate({
     where: {
-      fetchedAt: {
-        gte: startOfDay(today),
-        lte: endOfDay(today),
+      createdAt: {
+        gte: threeMonthsAgo,
       },
     },
     _avg: {
@@ -65,13 +54,15 @@ export default async function Dashboard({
 
   const avgRating = avgRatingResult._avg.rating || 0;
 
-  // 증감률 계산
-  const reviewChangePercent = yesterdayReviewsCount > 0
-    ? ((todayReviewsCount - yesterdayReviewsCount) / yesterdayReviewsCount) * 100
+  // 월간 증감률 계산 (최근 1개월 vs 이전 2개월 평균)
+  const prevTwoMonthsCount = threeMonthReviewsCount - recentMonthReviewsCount;
+  const prevMonthlyAverage = prevTwoMonthsCount / 2;
+  const reviewChangePercent = prevMonthlyAverage > 0
+    ? ((recentMonthReviewsCount - prevMonthlyAverage) / prevMonthlyAverage) * 100
     : 0;
 
-  // 오늘의 토픽 요약 조회
-  const todaySummaries = await prisma.summary.findMany({
+  // 최신 3개월 토픽 요약 조회
+  const quarterlySummaries = await prisma.summary.findMany({
     where: {
       dateKey: todayKey,
     },
@@ -82,7 +73,7 @@ export default async function Dashboard({
 
   // 토픽 데이터 파싱
   const allTopics: any[] = [];
-  todaySummaries.forEach(summary => {
+  quarterlySummaries.forEach(summary => {
     try {
       const topics = JSON.parse(summary.topicsJson);
       allTopics.push(...topics);
@@ -91,21 +82,26 @@ export default async function Dashboard({
     }
   });
 
-  // 리뷰 목록 조회 (클라이언트에서 필터링하므로 모든 리뷰 가져오기)
+  // 최근 3개월 리뷰 목록 조회
   const reviews = await prisma.review.findMany({
+    where: {
+      createdAt: {
+        gte: threeMonthsAgo,
+      },
+    },
     orderBy: {
       createdAt: 'desc',
     },
-    take: 100, // 최대 100개까지 표시
+    take: 200, // 3개월 분석이므로 더 많은 리뷰 표시
     include: {
       app: true,
     },
   });
 
-  // 일일 요약 가져오기
-  const dailySummary = todaySummaries.length > 0 
-    ? todaySummaries[0].geminiSummary 
-    : '오늘의 요약이 아직 생성되지 않았습니다.';
+  // 3개월 종합 요약 가져오기
+  const quarterlySummary = quarterlySummaries.length > 0 
+    ? quarterlySummaries[0].geminiSummary 
+    : '3개월 종합 분석이 아직 생성되지 않았습니다.';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,21 +142,21 @@ export default async function Dashboard({
         {/* KPI 카드들 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <KPICard
-            title="오늘 수집 리뷰"
-            value={todayReviewsCount}
+            title="최근 1개월 리뷰"
+            value={recentMonthReviewsCount}
             change={{
               value: Math.round(reviewChangePercent),
-              label: "전일 대비"
+              label: "월평균 대비"
             }}
             icon={<span className="text-2xl">📝</span>}
           />
           <KPICard
-            title="7일간 총 리뷰"
-            value={sevenDayReviewsCount}
+            title="3개월 총 리뷰"
+            value={threeMonthReviewsCount}
             icon={<span className="text-2xl">📊</span>}
           />
           <KPICard
-            title="오늘 평균 평점"
+            title="3개월 평균 평점"
             value={avgRating.toFixed(1)}
             icon={<span className="text-2xl">⭐</span>}
           />
@@ -171,8 +167,8 @@ export default async function Dashboard({
           />
         </div>
 
-        {/* AI 일일 요약 */}
-        {dailySummary && (
+        {/* AI 3개월 종합 요약 */}
+        {quarterlySummary && (
           <div className="card mb-8">
             <div className="card-header">
               <div className="flex items-center gap-3">
@@ -182,15 +178,15 @@ export default async function Dashboard({
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">AI 일일 요약</h3>
-                  <p className="text-sm text-gray-600">Gemini 2.5 Flash가 분석한 종합 인사이트</p>
+                  <h3 className="text-xl font-bold text-gray-900">AI 3개월 종합 분석</h3>
+                  <p className="text-sm text-gray-600">Gemini 2.5 Flash가 분석한 3개월 트렌드 인사이트</p>
                 </div>
               </div>
             </div>
             <div className="card-body">
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border-l-4 border-purple-500">
                 <div className="text-gray-800 leading-relaxed whitespace-pre-line text-base">
-                  {dailySummary}
+                  {quarterlySummary}
                 </div>
               </div>
             </div>

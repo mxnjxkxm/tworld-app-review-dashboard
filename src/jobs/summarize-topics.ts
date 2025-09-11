@@ -16,14 +16,14 @@ interface TopicWithSummary extends KeywordCluster {
 }
 
 async function main() {
-  console.log('🧠 토픽 집계 및 요약 작업 시작');
+  console.log('🧠 토픽 집계 및 요약 작업 시작 (최근 3개월 분석)');
   
   try {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+    const threeMonthsAgo = subDays(new Date(), 90);
     
-    // 어제 이후 수집된 리뷰들을 가져오기
-    const cutoffDate = subDays(new Date(), 1);
+    // 최근 3개월 리뷰들을 가져오기
+    const cutoffDate = threeMonthsAgo;
     
     const apps = await prisma.app.findMany();
     
@@ -36,21 +36,22 @@ async function main() {
       console.log(`\n📱 ${app.name} (${app.store}) 토픽 분석 중...`);
       
       try {
-        // 최근 리뷰 조회 (지난 24시간)
+        // 최근 3개월 리뷰 조회
         const recentReviews = await prisma.review.findMany({
           where: {
             appId: app.id,
-            fetchedAt: {
+            createdAt: {
               gte: cutoffDate
             }
           },
           orderBy: {
             createdAt: 'desc'
-          }
+          },
+          take: 1000 // 최대 1000개로 제한하여 성능 최적화
         });
 
         if (recentReviews.length === 0) {
-          console.log(`  신규 리뷰가 없습니다.`);
+          console.log(`  최근 3개월 리뷰가 없습니다.`);
           continue;
         }
 
@@ -91,8 +92,8 @@ async function main() {
           }
         }
 
-        // 전체 일일 요약 생성
-        let dailySummary = '';
+        // 전체 3개월 종합 요약 생성
+        let quarterlySummary = '';
         try {
           const summaryData = topicsWithSummary.map(topic => ({
             topic: topic.topic,
@@ -102,10 +103,10 @@ async function main() {
             summary: topic.aiSummary?.summary || '요약 없음'
           }));
 
-          dailySummary = await generateDailySummary(summaryData);
+          quarterlySummary = await generateDailySummary(summaryData, '최근 3개월');
         } catch (error) {
-          console.error('  일일 요약 생성 실패:', error);
-          dailySummary = '일일 요약을 생성할 수 없습니다.';
+          console.error('  3개월 종합 요약 생성 실패:', error);
+          quarterlySummary = '3개월 종합 요약을 생성할 수 없습니다.';
         }
 
         // 데이터베이스에 저장
@@ -128,14 +129,14 @@ async function main() {
           },
           update: {
             topicsJson,
-            geminiSummary: dailySummary
+            geminiSummary: quarterlySummary
           },
           create: {
             store: app.store,
             appId: app.id,
             dateKey: today,
             topicsJson,
-            geminiSummary: dailySummary
+            geminiSummary: quarterlySummary
           }
         });
 
@@ -155,14 +156,12 @@ async function main() {
       }
     });
 
-    console.log(`\n🎉 토픽 분석 완료! 오늘 생성된 요약: ${totalSummaries}개`);
+    console.log(`\n🎉 3개월 토픽 분석 완료! 생성된 요약: ${totalSummaries}개`);
 
     // 최근 요약 통계
     const recentSummaries = await prisma.summary.findMany({
       where: {
-        dateKey: {
-          in: [today, yesterday]
-        }
+        dateKey: today
       },
       include: {
         app: true
@@ -172,10 +171,10 @@ async function main() {
       }
     });
 
-    console.log('\n📊 최근 요약 현황:');
+    console.log('\n📊 3개월 종합 분석 현황:');
     recentSummaries.forEach(summary => {
       const topics = JSON.parse(summary.topicsJson);
-      console.log(`  ${summary.dateKey} - ${summary.app.name}: ${topics.length}개 토픽`);
+      console.log(`  ${summary.dateKey} - ${summary.app.name}: ${topics.length}개 토픽 (3개월 분석)`);
     });
 
   } catch (error) {

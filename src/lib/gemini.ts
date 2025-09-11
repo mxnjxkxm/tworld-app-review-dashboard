@@ -59,11 +59,12 @@ export async function generateDailySummary(
     sentiment: string;
     urgency: string;
     summary: string;
-  }>
+  }>,
+  period: string = '오늘'
 ): Promise<string> {
   const prompt = `
 역할: 고객 서비스 매니저
-작업: 오늘 수집된 T world 앱 리뷰의 토픽별 요약을 바탕으로 전체 상황을 3-5문장으로 종합 요약해주세요.
+작업: ${period} 수집된 T world 앱 리뷰의 토픽별 요약을 바탕으로 전체 상황을 3-5문장으로 종합 요약해주세요.
 
 토픽별 요약:
 ${topicSummaries.map(t => 
@@ -74,6 +75,7 @@ ${topicSummaries.map(t =>
 1. 가장 빈번한 이슈와 긍정적 피드백
 2. 우선순위가 높은 개선점
 3. 전반적인 고객 만족도 트렌드
+${period === '최근 3개월' ? '4. 장기적인 패턴과 개선 추이' : ''}
 
 한국어로 답변해주세요.
   `.trim();
@@ -82,8 +84,8 @@ ${topicSummaries.map(t =>
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
-    console.error("일일 요약 생성 오류:", error);
-    return "일일 요약을 생성하는 중 오류가 발생했습니다.";
+    console.error(`${period} 요약 생성 오류:`, error);
+    return `${period} 요약을 생성하는 중 오류가 발생했습니다.`;
   }
 }
 
