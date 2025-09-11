@@ -14,8 +14,10 @@ interface SearchParams {
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
+  // searchParams를 await로 해결
+  const resolvedSearchParams = await searchParams;
   const today = new Date();
   const yesterday = subDays(today, 1);
   const sevenDaysAgo = subDays(today, 7);
